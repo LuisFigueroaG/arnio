@@ -1,7 +1,7 @@
 """Tests for schema validation."""
 
-import pytest
 import pandas as pd
+import pytest
 
 import arnio as ar
 
