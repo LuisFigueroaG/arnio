@@ -1,6 +1,7 @@
 """Tests for the normalize_whitespace pipeline step."""
 
 import pandas as pd
+import pytest
 
 import arnio as ar
 
@@ -67,4 +68,21 @@ def test_pandas_dataframe_input_returns_dataframe():
     df = pd.DataFrame({"name": ["hello   world"]})
     result = ar.normalize_whitespace(df)
     assert isinstance(result, pd.DataFrame)
+    assert result["name"][0] == "hello world"
+
+
+def test_missing_column_raises_value_error():
+    frame = ar.from_pandas(pd.DataFrame({"name": ["hello world"]}))
+    with pytest.raises(ValueError, match="Missing columns for normalize_whitespace"):
+        ar.pipeline(frame, [("normalize_whitespace", {"columns": ["nonexistent"]})])
+
+
+def test_explicit_non_string_column_is_skipped():
+    frame = ar.from_pandas(
+        pd.DataFrame({"age": [25, 30], "name": ["hello   world", "foo   bar"]})
+    )
+    result = ar.to_pandas(
+        ar.pipeline(frame, [("normalize_whitespace", {"columns": ["age", "name"]})])
+    )
+    assert list(result["age"]) == [25, 30]
     assert result["name"][0] == "hello world"
