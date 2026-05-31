@@ -24,14 +24,10 @@ def generate_summary(results, baseline):
             or not isinstance(baseline_time, (int, float))
             or baseline_time <= 0
         ):
-            lines.append(
-                f"| {case_name} | No comparable baseline available |"
-            )
+            lines.append(f"| {case_name} | No comparable baseline available |")
             continue
 
-        change_percent = (
-            (current_time - baseline_time) / baseline_time
-        ) * 100
+        change_percent = ((current_time - baseline_time) / baseline_time) * 100
 
         if abs(change_percent) < 1:
             status = "No significant change"
