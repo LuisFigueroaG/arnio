@@ -1047,6 +1047,9 @@ def scan_csv(
     >>> schema = ar.scan_csv("data.dat")              # non-standard extension accepted
     """
 
+    if not isinstance(path, (str, bytes, os.PathLike)) and not hasattr(path, "read"):
+        raise TypeError("scan_csv expected a filesystem path")
+
     path, should_cleanup, _ = _materialize_csv_input(path)
 
     try:
@@ -1278,6 +1281,9 @@ def read_jsonl(
     """
     _validate_jsonl_encoding(encoding)
 
+    if not isinstance(path, (str, bytes, os.PathLike)):
+        raise TypeError("read_jsonl expected a filesystem path")
+
     path = os.fspath(path)
     encoding_errors = _validate_encoding_errors(encoding_errors)
     nrows = _validate_jsonl_nrows(nrows)
@@ -1415,6 +1421,9 @@ def sniff_delimiter(
     ValueError
         If the sample size is invalid or the delimiter is ambiguous.
     """
+    if not isinstance(path, (str, bytes, os.PathLike)):
+        raise TypeError("sniff_delimiter expected a filesystem path")
+
     path = os.fspath(path)
 
     # 1. Parameter Validation
