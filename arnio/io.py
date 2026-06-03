@@ -539,11 +539,12 @@ def _materialize_csv_input(
             is_gz = True
         elif not isinstance(source, str) and raw.lower().endswith(".gz"):
             is_gz = True
-            
+
         if is_gz:
             import gzip
             import shutil
             import tempfile
+
             tmp = tempfile.NamedTemporaryFile(
                 mode="wb",
                 suffix=".csv",
@@ -578,7 +579,7 @@ def _materialize_csv_input(
         # If it was an HTTP fetch but not a .gz, it's materialized text
         if is_temp:
             return raw, True, True
-            
+
         return raw, False, False
 
     if isinstance(source, io.StringIO) or (
