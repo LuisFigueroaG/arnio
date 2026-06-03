@@ -447,6 +447,20 @@ class TestReadParquetColumns:
         with pytest.raises(ValueError, match="must not be empty"):
             ar.read_parquet(str(out), columns=[])
 
+    def test_bare_string_columns_raises(self, tmp_path):
+        frame = ar.from_pandas(pd.DataFrame({"a": [1], "b": [2]}))
+        out = tmp_path / "str_columns.parquet"
+        ar.write_parquet(frame, str(out))
+        with pytest.raises(TypeError, match="bare string"):
+            ar.read_parquet(str(out), columns="a")
+
+    def test_bare_string_usecols_raises(self, tmp_path):
+        frame = ar.from_pandas(pd.DataFrame({"a": [1], "b": [2]}))
+        out = tmp_path / "str_usecols.parquet"
+        ar.write_parquet(frame, str(out))
+        with pytest.raises(TypeError, match="bare string"):
+            ar.read_parquet(str(out), usecols="a")
+
 
 class TestReadParquetErrors:
     def test_bad_extension_raises(self, tmp_path):

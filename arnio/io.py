@@ -1852,6 +1852,11 @@ def read_parquet(
     col_selection = usecols if usecols is not None else columns
 
     if col_selection is not None:
+        if isinstance(col_selection, (str, bytes)):
+            raise TypeError(
+                "columns/usecols must be a list of column name strings, "
+                "not a bare string."
+            )
         if len(col_selection) == 0:
             raise ValueError("columns/usecols must not be empty.")
         for c in col_selection:
