@@ -18,7 +18,7 @@ import urllib.request
 import warnings
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import cast
+from typing import Any, NoReturn, cast
 
 from ._core import (
     _CsvChunkReader,
@@ -309,6 +309,32 @@ _URL_FETCH_TIMEOUT = 30  # seconds
 _URL_FETCH_CHUNK_SIZE = 65536  # 64 KiB per streaming read
 
 
+class _NoHttpRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Reject HTTP redirects instead of following them implicitly."""
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> NoReturn:
+        raise urllib.error.HTTPError(
+            req.full_url,
+            code,
+            f"redirects are not allowed for CSV URL fetches: {newurl}",
+            headers,
+            fp,
+        )
+
+
+def _open_url_without_redirects(req: urllib.request.Request, timeout: float) -> Any:
+    opener = urllib.request.build_opener(_NoHttpRedirectHandler())
+    return opener.open(req, timeout=timeout)
+
+
 def _fetch_url_to_tempfile(url: str) -> str:
     """Fetch an HTTP/HTTPS URL and write its content to a UTF-8 temp file.
 
@@ -344,7 +370,7 @@ def _fetch_url_to_tempfile(url: str) -> str:
             headers={"User-Agent": "arnio/read_csv"},
         )
         try:
-            response = urllib.request.urlopen(req, timeout=_URL_FETCH_TIMEOUT)
+            response = _open_url_without_redirects(req, timeout=_URL_FETCH_TIMEOUT)
         except urllib.error.HTTPError as exc:
             raise RemoteReadError(
                 f"HTTP {exc.code} fetching CSV URL {url!r}: {exc.reason}",
@@ -720,7 +746,7 @@ def _enrich_csv_runtime_error(
 
     if "Invalid UTF-8 sequence encountered" in msg:
         return CsvReadError(
-            f"Could not read CSV file {path} using encoding " f"{encoding}: {msg}"
+            f"Could not read CSV file {path} using encoding {encoding}: {msg}"
         )
 
     return _enrich_row_width_error(exc, delimiter)
@@ -2404,13 +2430,13 @@ def write_json(
     path_lower = path.lower()
     if not path_lower.endswith(".json"):
         raise ValueError(
-            f"Unsupported file format: {path}. " "write_json only supports .json files."
+            f"Unsupported file format: {path}. write_json only supports .json files."
         )
 
     valid_orients = ("records", "list", "split")
     if orient not in valid_orients:
         raise ValueError(
-            f"Unsupported orient: {orient!r}. " f"Valid options are: {valid_orients}"
+            f"Unsupported orient: {orient!r}. Valid options are: {valid_orients}"
         )
 
     if indent is not None:
