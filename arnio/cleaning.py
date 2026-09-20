@@ -8,7 +8,7 @@ from __future__ import annotations
 import copy
 import math
 import unicodedata
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import numpy as np
@@ -98,6 +98,47 @@ def _validate_column_sequence(
     invalid_columns = [column for column in normalized if not isinstance(column, str)]
     if invalid_columns:
         raise TypeError(f"{argument_name} must contain only string column names")
+
+    return normalized
+
+
+def _validate_existing_column_sequence(
+    columns: Sequence[str],
+    *,
+    available_columns: Sequence[str],
+    argument_name: str,
+    allow_empty: bool = True,
+    reject_duplicates: bool = False,
+    missing_error: type[Exception] = KeyError,
+    missing_message: Callable[[list[str], str], str] | None = None,
+) -> list[str]:
+    if isinstance(columns, pd.Index):
+        columns = columns.tolist()
+    normalized = _validate_column_sequence(columns, argument_name=argument_name)
+
+    if not normalized and not allow_empty:
+        raise ValueError(f"{argument_name} cannot be empty")
+
+    if reject_duplicates:
+        seen = set()
+        duplicates = []
+        for col in normalized:
+            if col in seen and col not in duplicates:
+                duplicates.append(col)
+            seen.add(col)
+        if duplicates:
+            raise ValueError(
+                f"{argument_name} contains duplicate column names: {duplicates}"
+            )
+
+    missing = [column for column in normalized if column not in available_columns]
+    if missing:
+        available = ", ".join(map(str, available_columns)) or "<none>"
+        if missing_message is None:
+            message = f"Missing columns: {missing}. Available columns: {available}"
+        else:
+            message = missing_message(missing, available)
+        raise missing_error(message)
 
     return normalized
 
