@@ -213,6 +213,8 @@ def _validate_existing_column_sequence(
     missing_error: type[Exception] = KeyError,
     missing_message: Callable[[list[str], str], str] | None = None,
 ) -> list[str]:
+    if isinstance(columns, pd.Index):
+        columns = columns.tolist()
     normalized = _validate_column_sequence(columns, argument_name=argument_name)
 
     if not normalized and not allow_empty:
@@ -1348,7 +1350,9 @@ def normalize_unicode(
     if not isinstance(form, str):
         raise TypeError("form must be a string")
     if form not in valid_forms:
-        raise ValueError(f"Unsupported normalization form: '{form}'. Supported forms: {', '.join(sorted(valid_forms))}")
+        raise ValueError(
+            f"Unsupported normalization form: '{form}'. Supported forms: {', '.join(sorted(valid_forms))}"
+        )
     if subset is not None:
         validate_columns_exist(
             frame,
@@ -2453,7 +2457,9 @@ def split_column(
     if column not in frame.columns:
         raise KeyError(f"Column {column!r} not found in frame.")
 
-    if not isinstance(into, list) or not all(isinstance(n, str) and n.strip() for n in into):
+    if not isinstance(into, list) or not all(
+        isinstance(n, str) and n.strip() for n in into
+    ):
         raise TypeError("into must be a list of non-empty strings")
 
     if len(into) == 0:
@@ -2464,9 +2470,7 @@ def split_column(
 
     existing = [n for n in into if n in frame.columns]
     if existing:
-        raise ValueError(
-            f"Cannot create split columns that already exist: {existing}"
-        )
+        raise ValueError(f"Cannot create split columns that already exist: {existing}")
 
     if (separator is None) == (pattern is None):
         raise ValueError(
@@ -2772,7 +2776,9 @@ def parse_numeric_strings(
     >>> cleaned = ar.parse_numeric_strings(frame, subset=["price", "discount"])
     """
     if errors not in ("coerce", "raise"):
-        raise ValueError(f"errors parameter must be 'coerce' or 'raise', not '{errors}'")
+        raise ValueError(
+            f"errors parameter must be 'coerce' or 'raise', not '{errors}'"
+        )
 
     if subset is not None:
         validate_columns_exist(
@@ -2793,7 +2799,9 @@ def parse_numeric_strings(
         return frame
 
     for col in target_columns:
-        if pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(df[col]):
+        if pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(
+            df[col]
+        ):
             cleaned_series = df[col].astype(str).str.strip()
             cleaned_series = cleaned_series.str.replace(r"[$,£€]", "", regex=True)
             is_percent = cleaned_series.str.endswith("%")
