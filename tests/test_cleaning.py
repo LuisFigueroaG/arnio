@@ -835,6 +835,52 @@ class TestDropDuplicates:
         with pytest.raises(KeyError):
             ar.drop_duplicates(frame, subset=["missing"])
 
+    def test_drop_duplicates_hash_bucket_equality_confirmation(self):
+        """
+        Rows that share a hash bucket must still be compared for full equality.
+
+        This regression test protects the collision-safe bucket design:
+        hash matches alone must never cause distinct rows to be dropped.
+        """
+
+        import pandas as pd
+
+        frame = ar.from_pandas(
+            pd.DataFrame(
+                {
+                    "a": [1, 1, 1],
+                    "b": ["x", "x", "y"],
+                    "c": [True, True, True],
+                }
+            )
+        )
+
+        result = ar.drop_duplicates(frame)
+
+        out = ar.to_pandas(result)
+
+        assert len(out) == 2
+
+        assert list(out["a"]) == [1, 1]
+        assert list(out["b"]) == ["x", "y"]
+        assert list(out["c"]) == [True, True]
+
+    def test_drop_duplicates_float_nan_rows_from_csv(self, tmp_path):
+        path = tmp_path / "nan.csv"
+
+        path.write_text(
+            "x\nNaN\nNaN\n1.0\n",
+            encoding="utf-8",
+        )
+
+        frame = ar.read_csv(str(path))
+
+        result = ar.drop_duplicates(frame)
+
+        out = ar.to_pandas(result)
+
+        assert len(out) == 2
+
 
 class TestDropColumns:
     def test_drop_columns_removes_requested_columns_and_preserves_order(self):
