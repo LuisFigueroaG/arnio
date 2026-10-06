@@ -1865,3 +1865,24 @@ def test_astype_rejects_multielement_numpy_array():
     # 3. Multi-element NumPy array check
     with pytest.raises(TypeError, match="dtype must be a string"):
         frame.astype(np.array([1, 2]))
+
+
+# ── is_empty ──────────────────────────────────────────────────────────────────
+
+
+def test_is_empty_returns_false_when_frame_has_rows():
+    frame = ar.from_dict({"name": ["Alice", "Bob"], "age": [25, 30]})
+    assert frame.is_empty is False
+
+
+def test_is_empty_returns_true_for_empty_frame():
+    import pandas as pd
+
+    df = pd.DataFrame(columns=["name", "age"])
+    frame = ar.from_pandas(df)
+    assert frame.is_empty is True
+
+
+def test_is_empty_single_row_is_not_empty():
+    frame = ar.from_dict({"name": ["Alice"], "age": [25]})
+    assert frame.is_empty is False

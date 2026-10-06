@@ -335,6 +335,24 @@ class ArFrame:
         return self._frame.dtypes()
 
     @property
+    def is_empty(self) -> bool:
+        """Check if frame has zero rows.
+
+        Returns
+        -------
+        bool
+            True if frame contains no rows, False otherwise.
+
+        Examples
+        --------
+        >>> frame = ar.read_csv("data.csv")
+        >>> if frame.is_empty:
+        ...     print("No data to process")
+        False
+        """
+        return len(self) == 0
+
+    @property
     def schema_summary(self) -> list[ColumnSummary]:
         """Column names, dtypes, and nullability in one place.
 
@@ -369,24 +387,6 @@ class ArFrame:
                 ColumnSummary(name=name, dtype=col_dtypes[name], nullable=nullable)
             )
         return result
-
-    @property
-    def is_empty(self) -> bool:
-        """Check if frame has zero rows.
-
-        Returns
-        -------
-        bool
-            True if frame contains no rows, False otherwise.
-
-        Examples
-        --------
-        >>> frame = ar.read_csv("data.csv")
-        >>> if frame.is_empty:
-        ...     print("No data to process")
-        False
-        """
-        return len(self) == 0
 
     # --- Methods ---
 
