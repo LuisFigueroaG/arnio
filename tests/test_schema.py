@@ -5379,3 +5379,19 @@ class TestChoice:
         frame = ar.from_dict({"status": ["x", "y", "z", "x"]})
         result = schema.validate(frame)
         assert result.issue_count == 0
+
+
+def test_required_if_missing_column_preserves_warning_severity():
+    frame = ar.from_dict({"x": [""]})
+    schema = ar.Schema({"x": ar.String(required_if=("flag", True), severity="warning")})
+    result = ar.validate(frame, schema)
+    issue = next(i for i in result.issues if i.rule == "missing_column")
+    assert issue.severity == "warning"
+
+
+def test_required_if_missing_column_preserves_error_severity():
+    frame = ar.from_dict({"x": [""]})
+    schema = ar.Schema({"x": ar.String(required_if=("flag", True), severity="error")})
+    result = ar.validate(frame, schema)
+    issue = next(i for i in result.issues if i.rule == "missing_column")
+    assert issue.severity == "error"
