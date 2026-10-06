@@ -4078,6 +4078,50 @@ class TestSafeDivideColumns:
 
         assert list(df["ratio"]) == [10.0, 10.0]
 
+    def test_native_numeric_arframe_path_preserves_attrs(self):
+        frame = ar.from_pandas(
+            pd.DataFrame(
+                {
+                    "revenue": [100.0, 200.0],
+                    "cost": [10.0, 20.0],
+                }
+            )
+        )
+        frame._attrs["source"] = {"name": "warehouse"}
+
+        result = ar.safe_divide_columns(
+            frame,
+            numerator="revenue",
+            denominator="cost",
+            output_column="ratio",
+        )
+
+        assert result._attrs == frame._attrs
+        assert result._attrs is not frame._attrs
+        assert result._attrs["source"] is not frame._attrs["source"]
+
+    def test_pandas_fallback_arframe_path_preserves_attrs(self):
+        frame = ar.from_pandas(
+            pd.DataFrame(
+                {
+                    "revenue": ["100", "200"],
+                    "cost": ["10", "20"],
+                }
+            )
+        )
+        frame._attrs["source"] = {"name": "vendor_export"}
+
+        result = ar.safe_divide_columns(
+            frame,
+            numerator="revenue",
+            denominator="cost",
+            output_column="ratio",
+        )
+
+        assert result._attrs == frame._attrs
+        assert result._attrs is not frame._attrs
+        assert result._attrs["source"] is not frame._attrs["source"]
+
     # --- Regression tests for string zero denominators (bug fix) ---
 
     def test_string_zero_denominator_uses_fill_value(self):
