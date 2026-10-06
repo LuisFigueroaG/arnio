@@ -249,3 +249,5 @@ benchmarks/benchmark_strip_whitespace.csv
 failed_log.txt
 run_error.txt
 *.swp
+
+.DS_Store

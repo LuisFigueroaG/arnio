@@ -20,6 +20,7 @@ from arnio.quality import (
     QUALITY_REPORT_COLUMNS,
     CleaningSuggestion,
     DataQualityReport,
+    _duplicate_count,
     _validate_gate_bool,
     _validate_gate_ratio_threshold,
     _validate_gate_threshold,
@@ -1690,6 +1691,38 @@ def test_profile_exclude_columns_scopes_report_metrics_and_suggestions(tmp_path)
         getattr(suggestion, "kwargs", {}).get("subset") != ["id"]
         for suggestion in scoped_report.suggestions
     )
+
+
+def test_duplicate_count_with_subset():
+    df = pd.DataFrame(
+        {
+            "name": ["A", "A", "B", "B"],
+            "age": [20, 20, 30, 31],
+        }
+    )
+
+    assert _duplicate_count(df, subset=["name"]) == 2
+
+
+def test_duplicate_count_subset_string_error():
+    df = pd.DataFrame({"a": [1, 1]})
+
+    with pytest.raises(TypeError):
+        _duplicate_count(df, subset="a")
+
+
+def test_duplicate_count_subset_invalid_type():
+    df = pd.DataFrame({"a": [1, 1]})
+
+    with pytest.raises(TypeError):
+        _duplicate_count(df, subset=123)
+
+
+def test_duplicate_count_subset_non_string_values():
+    df = pd.DataFrame({"a": [1, 1]})
+
+    with pytest.raises(TypeError):
+        _duplicate_count(df, subset=[1, 2])
 
 
 # ── string length statistics tests ───────────────────────────────────────────
