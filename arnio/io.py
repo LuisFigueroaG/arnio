@@ -2353,6 +2353,43 @@ def write_parquet(
     df.to_parquet(path, **kwargs)
 
 
+@contextmanager
+def _atomic_text_writer(
+    path: str,
+    *,
+    encoding: str,
+    errors: str | None = None,
+    newline: str | None = None,
+) -> Iterator[io.TextIOBase]:
+    directory = os.path.dirname(os.path.abspath(path)) or "."
+    basename = os.path.basename(path)
+    fd, tmp_path_str = tempfile.mkstemp(
+        dir=directory,
+        prefix=f".{basename}.",
+        suffix=".tmp",
+        text=True,
+    )
+    tmp_path: str | None = tmp_path_str
+    try:
+        with os.fdopen(
+            fd,
+            "w",
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+        ) as dst:
+            yield dst
+        assert tmp_path is not None
+        os.replace(tmp_path, path)
+        tmp_path = None
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
 def write_json(
     frame: ArFrame,
     path: str | os.PathLike[str],
@@ -2421,7 +2458,7 @@ def write_json(
 
     data = frame.to_dict(orient=orient)
 
-    with open(path, "w", encoding="utf-8") as f:
+    with _atomic_text_writer(path, encoding="utf-8") as f:
         json.dump(data, f, indent=indent)
 
 
@@ -2450,9 +2487,8 @@ def write_jsonl(
         ) from exc
 
     try:
-        with open(
+        with _atomic_text_writer(
             path,
-            "w",
             encoding=encoding,
             errors=encoding_errors,
             newline="",
